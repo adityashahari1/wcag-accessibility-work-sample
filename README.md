@@ -1,6 +1,6 @@
 # WCAG 2.1 AA Accessibility Demonstration Site
 
-A work sample demonstrating practical WCAG 2.1 Level AA accessibility implementation, built for a university accessibility support role. No libraries, no frameworks — semantic HTML, vanilla CSS, and vanilla JavaScript only.
+A work sample demonstrating practical WCAG 2.1 Level AA accessibility implementation.
 
 ---
 
@@ -178,13 +178,6 @@ lighthouse http://localhost:3000 --only-categories=accessibility --output html -
 open ./report.html
 ```
 
-### Deploying to GitHub Pages
-
-1. Push your repository to GitHub.
-2. In the repository **Settings → Pages**, set the source to `main` branch, root (`/`).
-3. Wait ~60 seconds. The page will be live at `https://<username>.github.io/<repo-name>/`.
-4. Run Lighthouse against the live URL for the most accurate results.
-
 ---
 
 ## Reflection: Accessibility Trade-offs and Decisions
@@ -228,10 +221,3 @@ Every piece of information conveyed by colour is also conveyed by text or struct
 - Sort direction: the `aria-sort` attribute + live announcement + visual icon (which is `aria-hidden`).
 
 This satisfies SC 1.4.1 and ensures the page is usable by people with colour vision deficiencies.
-
-### What This Demo Does Not Cover
-
-For completeness, the following WCAG AA criteria are not heavily demonstrated here (but would be addressed in a full production site):
-- **SC 1.2.x (Captions/Audio Description):** No video or audio content is included.
-- **SC 1.4.11 (Non-text Contrast):** UI component boundaries (input borders, focus rings) are targeted but not exhaustively verified against all possible system themes.
-- **SC 2.5.x (Pointer Gestures):** Not demonstrated, as the site has no swipe/drag interactions.
