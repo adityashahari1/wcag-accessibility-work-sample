@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<!--
+  WCAG 2.1 AA Accessibility Demonstration Site
+  =============================================
+  Author: Aditya
+  Purpose: Work sample for a university accessibility support role.
+
+  Design Philosophy:
+  - Semantic HTML first. ARIA is used only where native semantics are
+    insufficient (W3C rule: "No ARIA is better than bad ARIA").
+  - Every accessibility decision is annotated inline.
+  - Attribute comments appear OUTSIDE tags (never inside an opening tag —
+    that is invalid HTML and causes attributes to render as text).
+-->
+
+<!--
+  lang attribute — SC 3.1.1 Language of Page:
+  Declares the primary language so screen readers choose the correct
+  pronunciation engine (e.g., English vs. French TTS voice).
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!--
+    viewport meta — ensures the browser does not scale down the page on
+    mobile, which would shrink text below the 200% zoom tolerance
+    required by SC 1.4.4 Resize Text.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--
+    Descriptive <title> — SC 2.4.2 Page Titled:
+    Screen readers announce the title on load. It must describe the page's
+    topic or purpose so users know where they are without reading the content.
+  -->
+  <title>WCAG 2.1 AA Demo – Accessibility Work Sample</title>
+
+  <meta name="description"
+    content="A demonstration of WCAG 2.1 AA accessibility techniques including semantic HTML, ARIA, keyboard navigation, and accessible UI patterns.">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!--
+    SKIP LINK — SC 2.4.1 Bypass Blocks:
+    Visually hidden; appears on keyboard focus (via CSS).
+    Lets keyboard users jump past the repeated navigation to the main
+    content area, avoiding tabbing through the full nav list on every page.
+    The target is #main-content on the <main> element below.
+  -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+
+  <!--
+    HEADER landmark:
+    <header> carries the implicit ARIA role="banner". No role attribute
+    needed — using it would be redundant. SC 1.3.1, SC 2.4.1.
+  -->
+  <header>
+    <!--
+      Site name as <p>: the brand text inside <header> is NOT the page
+      heading. Using <h1> here would break the heading hierarchy required
+      by SC 1.3.1 (Info and Relationships).
+    -->
+    <p class="site-name">WCAG Demo</p>
+
+    <!--
+      NAV landmark — SC 2.4.1, SC 1.3.1:
+      <nav> has the implicit ARIA role="navigation".
+      aria-label="Primary navigation" distinguishes this nav from the
+      footer nav below; without it, screen readers would announce two
+      unlabelled "navigation" regions that users could not tell apart.
+    -->
+    <nav aria-label="Primary navigation">
+      <!--
+        Unordered list: correct semantic for a set of navigation links.
+        Screen readers announce "list, 6 items." SC 1.3.1.
+      -->
+      <ul>
+        <li><a href="#demo-form">Form Demo</a></li>
+        <li><a href="#demo-table">Table Demo</a></li>
+        <li><a href="#image-section">Images</a></li>
+        <li><a href="#accessibility-statement">Statement</a></li>
+        <li><a href="#testing-checklist">Checklist</a></li>
+        <!--
+          <button> for the modal trigger — SC 4.1.2 Name, Role, Value:
+          Buttons are keyboard-operable by default (Enter AND Space),
+          focusable, and carry implicit role="button". Using a <div> or
+          <span> here would require adding tabindex, role, and key handlers
+          manually — error-prone and fragile for AT.
+        -->
+        <li>
+          <button type="button" id="open-modal-btn">Open Modal Demo</button>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+
+  <!--
+    MAIN landmark — SC 1.3.1, SC 2.4.1:
+    <main> carries the implicit ARIA role="main". Only one <main> per page.
+    id="main-content" is the skip link target.
+  -->
+  <main id="main-content">
+
+    <!-- Single <h1> per page — SC 1.3.1 heading hierarchy. -->
+    <h1>Accessibility Demonstration Site</h1>
+    <p>
+      This page demonstrates practical WCAG 2.1 AA techniques. Each section
+      includes inline comments explaining the accessibility reasoning. Navigate
+      with a keyboard and screen reader to explore the patterns.
+    </p>
+
+
+    <!-- ================================================================
+         SECTION: ACCESSIBLE FORM WITH ARIA-LIVE ERROR ANNOUNCEMENTS
+         SC 1.3.1 Info and Relationships
+         SC 1.3.5 Identify Input Purpose
+         SC 3.3.1 Error Identification
+         SC 3.3.2 Labels or Instructions
+         SC 3.3.3 Error Suggestion
+    ================================================================ -->
+    <!--
+      aria-labelledby on <section> gives the region an accessible name
+      using the visible heading text, so screen reader users who navigate
+      by landmarks hear "Accessible Form Example, region" rather than
+      just "region." SC 1.3.1.
+    -->
+    <section aria-labelledby="form-heading" id="demo-form">
+      <h2 id="form-heading">Accessible Form Example</h2>
+      <p>
+        All fields use native <code>&lt;label&gt;</code> elements associated
+        by <code>for</code>/<code>id</code> pairs. ARIA is added only where
+        native HTML cannot convey required context — specifically, the live
+        error regions that announce validation messages to screen readers.
+      </p>
+
+      <!--
+        novalidate: Disables browser-native validation UI.
+        Browser validation is inconsistent across implementations and is
+        not always announced clearly by screen readers. Our custom JS
+        validation provides equivalent error messages via aria-live regions,
+        giving us full control over the accessible experience.
+      -->
+      <form id="contact-form" novalidate>
+
+        <!-- NAME FIELD -->
+        <div class="field-group">
+          <!--
+            <label for="name">: provides a programmatically determined label.
+            - Clicking the label focuses the input (SC 2.5.3 Label in Name).
+            - Screen readers announce "Full Name, required, edit text."
+            - Never use placeholder as a label substitute — placeholders
+              disappear during input and often have insufficient contrast (SC 1.4.3).
+          -->
+          <label for="name">
+            Full Name
+            <!--
+              aria-hidden="true" on the asterisk: hides the decorative marker
+              from screen readers — the required state is communicated via
+              aria-required on the input, not by reading "*".
+            -->
+            <span aria-hidden="true" class="required-marker">*</span>
+          </label>
+          <!--
+            autocomplete="name" — SC 1.3.5 Identify Input Purpose:
+            For common personal data fields, autocomplete lets users with
+            cognitive or motor disabilities auto-fill forms reliably.
+
+            aria-required="true" — SC 4.1.2:
+            Tells screen readers the field is required. We pair this with
+            the native `required` attribute so both the AT and native
+            constraint validation (if ever re-enabled) agree.
+
+            aria-describedby="name-error" — SC 3.3.1:
+            Links the input to its error span. When that span has text,
+            the screen reader reads it after the label when the field is focused.
+          -->
+          <input type="text" id="name" name="name" autocomplete="name" aria-required="true"
+            aria-describedby="name-error">
+          <!--
+            aria-live="polite" on the error span — SC 4.1.3 Status Messages:
+            When JS injects error text here, screen readers announce it without
+            interrupting ongoing speech. "polite" waits; "assertive" interrupts —
+            polite is appropriate for inline field errors.
+            role="status" reinforces the live region semantics (redundant but explicit).
+            The span is always in the DOM and empty; JS populates it on error.
+          -->
+          <span class="field-error" id="name-error" aria-live="polite" role="status"></span>
+        </div>
+
+        <!-- EMAIL FIELD -->
+        <div class="field-group">
+          <label for="email">
+            Email Address
+            <span aria-hidden="true" class="required-marker">*</span>
+          </label>
+          <!--
+            type="email" — SC 1.3.5:
+            Communicates the expected input type and triggers an email-optimised
+            keyboard on mobile. Does not replace custom validation (we use novalidate)
+            but still conveys intent to the browser and AT.
+          -->
+          <input type="email" id="email" name="email" autocomplete="email" aria-required="true"
+            aria-describedby="email-error">
+          <span class="field-error" id="email-error" aria-live="polite" role="status"></span>
+        </div>
+
+        <!-- MESSAGE FIELD -->
+        <div class="field-group">
+          <label for="message">
+            Message
+            <span aria-hidden="true" class="required-marker">*</span>
+          </label>
+          <textarea id="message" name="message" rows="5" aria-required="true"
+            aria-describedby="message-error"></textarea>
+          <span class="field-error" id="message-error" aria-live="polite" role="status"></span>
+        </div>
+
+        <!-- Instruction explaining the required-field convention. SC 3.3.2. -->
+        <p class="form-instruction">
+          <span aria-hidden="true" class="required-marker">*</span>
+          Indicates a required field.
+        </p>
+
+        <!--
+          <button type="submit"> submits the form on Enter without any
+          additional JS event handler. SC 2.1.1 Keyboard.
+        -->
+        <button type="submit">Send Message</button>
+
+        <!--
+          Form-level feedback region — SC 4.1.3 Status Messages:
+          Announces overall success or failure after submission without
+          stealing focus (focus moves to first invalid field on failure).
+        -->
+        <div id="form-status" aria-live="polite" role="status" class="form-status"></div>
+
+      </form>
+    </section>
+
+
+    <!-- ================================================================
+         SECTION: SORTABLE TABLE WITH ARIA-SORT
+         SC 1.3.1 Info and Relationships
+         SC 4.1.2 Name, Role, Value (aria-sort)
+         SC 4.1.3 Status Messages (live region)
+    ================================================================ -->
+    <section aria-labelledby="table-heading" id="demo-table">
+      <h2 id="table-heading">Accessible Sortable Table</h2>
+      <p>
+        Click any column header button (or press <kbd>Enter</kbd> / <kbd>Space</kbd>)
+        to sort. The <code>aria-sort</code> attribute on <code>&lt;th&gt;</code> communicates
+        sort state to screen readers without relying solely on visual icons.
+      </p>
+
+      <!--
+        tabindex="0" on the wrapper div: allows keyboard users to focus the
+        container and scroll it horizontally when the table is wider than the
+        viewport. SC 1.4.10 Reflow.
+        role="region" + aria-label gives the scrollable container a name
+        so AT users understand what they are focused on.
+      -->
+      <div class="table-wrapper" tabindex="0" role="region" aria-label="Sortable course data table">
+        <!--
+          <table> with <caption>: The <caption> is the accessible name for
+          the table — announced before the content. Do NOT replace with
+          aria-label on the <table>; the <caption> element is the correct
+          HTML technique (H39). SC 1.3.1.
+        -->
+        <table id="courses-table">
+          <caption>University Course Enrolment Data</caption>
+          <thead>
+            <tr>
+              <!--
+                scope="col": programmatically associates headers with columns
+                so screen readers announce "Course Name, column 1 of 4" etc.
+                SC 1.3.1 (H63).
+
+                aria-sort starts as "none" on all columns (no sort active).
+                JS updates the active column to "ascending" or "descending"
+                and resets others to "none". SC 4.1.2.
+
+                The interactive element is a <button> inside <th> — NOT the
+                <th> itself. Making a <th> interactive (tabindex on a non-
+                interactive element) is an anti-pattern. SC 2.1.1.
+              -->
+              <th scope="col" aria-sort="none" id="col-course">
+                <button type="button" class="sort-btn" data-col="0">
+                  Course Name
+                  <!--
+                    aria-hidden on the sort icon: state is already communicated
+                    via aria-sort on the parent <th>. Hiding the icon prevents
+                    screen readers from announcing "▲" or "▼" redundantly.
+                  -->
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th scope="col" aria-sort="none" id="col-dept">
+                <button type="button" class="sort-btn" data-col="1">
+                  Department
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th scope="col" aria-sort="none" id="col-enrolled">
+                <button type="button" class="sort-btn" data-col="2">
+                  Enrolment
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th scope="col" aria-sort="none" id="col-credits">
+                <button type="button" class="sort-btn" data-col="3">
+                  Credits
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="courses-tbody">
+            <tr>
+              <td>Introduction to Computer Science</td>
+              <td>Computing</td>
+              <td>342</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>Cognitive Psychology</td>
+              <td>Psychology</td>
+              <td>210</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>Accessible Design Principles</td>
+              <td>Design</td>
+              <td>98</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>Data Structures and Algorithms</td>
+              <td>Computing</td>
+              <td>280</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>Technical Writing</td>
+              <td>English</td>
+              <td>155</td>
+              <td>2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!--
+        Off-screen live region for sort announcements — SC 4.1.3:
+        Screen readers do NOT automatically re-announce table content
+        after DOM changes. This live region lets JS explicitly announce
+        the new sort state (e.g., "Table sorted by Credits, descending.")
+        .sr-only in CSS positions it off-screen but keeps it in the AT tree.
+      -->
+      <div id="table-announce" aria-live="polite" role="status" class="sr-only"></div>
+    </section>
+
+
+    <!-- ================================================================
+         SECTION: ALT TEXT — MEANINGFUL VS DECORATIVE
+         SC 1.1.1 Non-text Content
+    ================================================================ -->
+    <section aria-labelledby="image-heading" id="image-section">
+      <h2 id="image-heading">Alt Text: Meaningful vs. Decorative Images</h2>
+      <p>
+        SC 1.1.1 requires all non-text content to have a text alternative.
+        The technique differs depending on whether the image conveys
+        information or is purely decorative.
+      </p>
+
+      <div class="image-examples">
+
+        <!-- MEANINGFUL IMAGE -->
+        <figure class="image-card">
+          <!--
+            Meaningful image — SC 1.1.1 (Technique H37):
+            alt text describes WHAT the image shows and WHY it matters.
+            It answers: "What would a sighted user learn from this image
+            that a non-sighted user would miss?"
+            The description is specific and purposeful, not generic ("image of students").
+          -->
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='180' viewBox='0 0 300 180'%3E%3Crect width='300' height='180' fill='%23e8f4f8'/%3E%3Crect x='40' y='40' width='80' height='100' fill='%238ba7c7' rx='4'/%3E%3Crect x='50' y='50' width='60' height='8' fill='white' rx='2'/%3E%3Crect x='50' y='65' width='60' height='6' fill='white' rx='2'/%3E%3Crect x='50' y='77' width='55' height='6' fill='white' rx='2'/%3E%3Ccircle cx='185' cy='80' r='30' fill='%236b8cae'/%3E%3Crect x='165' y='110' width='40' height='50' fill='%236b8cae' rx='4'/%3E%3Cline x1='160' y1='130' x2='130' y2='140' stroke='%236b8cae' stroke-width='8' stroke-linecap='round'/%3E%3Cline x1='210' y1='130' x2='240' y2='145' stroke='%236b8cae' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E"
+            alt="A student sitting at a desk, reading an open book in a university library" width="300" height="180">
+          <figcaption>
+            <strong>Meaningful image:</strong> alt text describes the scene
+            and the information the image conveys.
+          </figcaption>
+        </figure>
+
+        <!-- DECORATIVE IMAGE -->
+        <figure class="image-card">
+          <!--
+            Decorative image — SC 1.1.1 (Technique H67):
+            alt="" (empty string, NOT absent) tells screen readers to skip
+            this image entirely. It adds visual texture only — no information
+            would be lost if the image were invisible.
+
+            IMPORTANT: Never omit the alt attribute entirely — some screen
+            readers then announce the file path (e.g., "data:image/svg+xml…"),
+            which is confusing and meaningless to the user.
+
+            role="presentation" is redundant when alt="" is set but is
+            included here for explicit documentation purposes.
+          -->
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='180' viewBox='0 0 300 180'%3E%3Crect width='300' height='180' fill='%23f0e8f4'/%3E%3Ccircle cx='80' cy='60' r='25' fill='%23c9a8d8' opacity='0.5'/%3E%3Ccircle cx='150' cy='90' r='35' fill='%23b8a0cc' opacity='0.4'/%3E%3Ccircle cx='230' cy='65' r='20' fill='%23d4bae0' opacity='0.6'/%3E%3Ccircle cx='110' cy='130' r='28' fill='%23c0aad0' opacity='0.5'/%3E%3Ccircle cx='200' cy='135' r='22' fill='%23cbb8d8' opacity='0.45'/%3E%3C/svg%3E"
+            alt="" role="presentation" width="300" height="180">
+          <figcaption>
+            <strong>Decorative image:</strong> <code>alt=""</code> tells
+            screen readers to skip this image. It adds visual texture only.
+          </figcaption>
+        </figure>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================
+         ACCESSIBILITY STATEMENT
+         Not a specific WCAG SC, but legally expected in many jurisdictions
+         (e.g., EN 301 549 in the EU) and professional best practice.
+    ================================================================ -->
+    <section aria-labelledby="statement-heading" id="accessibility-statement">
+      <h2 id="statement-heading">Accessibility Statement</h2>
+      <p>
+        This website is designed to conform to
+        <strong>WCAG 2.1 Level AA</strong> published by the
+        World Wide Web Consortium (W3C).
+      </p>
+      <h3>Known Limitations</h3>
+      <ul>
+        <li>
+          The SVG placeholder images are generated inline and may render with
+          limited detail on very high-DPI screens.
+        </li>
+        <li>
+          This is a demonstration page; content may not be exhaustive in
+          a production deployment.
+        </li>
+      </ul>
+      <h3>Feedback and Contact</h3>
+      <p>
+        If you experience any accessibility barriers, please use the
+        <a href="#demo-form">contact form</a> above or email
+        <a href="mailto:accessibility@example.edu">accessibility@example.edu</a>.
+      </p>
+      <h3>Conformance Status</h3>
+      <p>
+        We aim for <strong>full conformance</strong> with WCAG 2.1 AA.
+        We test with VoiceOver (macOS/iOS), NVDA (Windows), keyboard-only
+        navigation, and Lighthouse automated audits.
+      </p>
+    </section>
+
+
+    <!-- ================================================================
+         ACCESSIBILITY TESTING CHECKLIST
+    ================================================================ -->
+    <section aria-labelledby="checklist-heading" id="testing-checklist">
+      <h2 id="checklist-heading">Accessibility Testing Checklist</h2>
+      <p>
+        Use this checklist when reviewing pages for WCAG 2.1 AA compliance.
+        Each item maps to one or more success criteria.
+      </p>
+
+      <ol class="checklist">
+        <li>
+          <strong>Keyboard navigation (SC 2.1.1):</strong>
+          Tab through the entire page. Every interactive element must be
+          reachable and operable without a mouse.
+        </li>
+        <li>
+          <strong>Visible focus (SC 2.4.7):</strong>
+          A clearly visible focus indicator must appear on every focused element.
+        </li>
+        <li>
+          <strong>Skip link (SC 2.4.1):</strong>
+          Press Tab on the page. The skip link appears first and jumps to
+          main content when activated.
+        </li>
+        <li>
+          <strong>Colour contrast (SC 1.4.3):</strong>
+          Normal text ≥ 4.5:1, large text ≥ 3:1. Verify with WebAIM Contrast Checker.
+        </li>
+        <li>
+          <strong>Text resize (SC 1.4.4):</strong>
+          Zoom to 200%. No content should be cut off or overlap.
+        </li>
+        <li>
+          <strong>Form labels (SC 1.3.1, SC 3.3.2):</strong>
+          Each form control must have a programmatically associated label.
+        </li>
+        <li>
+          <strong>Error identification (SC 3.3.1, SC 3.3.3):</strong>
+          Submit the form empty. Each error is identified in text, suggests a
+          correction, and is announced by screen readers.
+        </li>
+        <li>
+          <strong>Image alt text (SC 1.1.1):</strong>
+          Meaningful images have descriptive alt text. Decorative images have <code>alt=""</code>.
+        </li>
+        <li>
+          <strong>Landmark regions (SC 1.3.1, SC 2.4.1):</strong>
+          The page contains <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>,
+          <code>&lt;main&gt;</code>, and <code>&lt;footer&gt;</code>.
+        </li>
+        <li>
+          <strong>Modal dialog (SC 2.1.2, SC 4.1.2):</strong>
+          Opening the modal traps focus. Escape closes the modal and returns
+          focus to the trigger button.
+        </li>
+        <li>
+          <strong>Table structure (SC 1.3.1):</strong>
+          The table uses <code>scope="col"</code> headers. Screen readers
+          announce column headers with each cell.
+        </li>
+        <li>
+          <strong>ARIA sort (SC 4.1.2):</strong>
+          After sorting, <code>aria-sort</code> on the active column updates
+          to "ascending" or "descending."
+        </li>
+        <li>
+          <strong>Reduced motion (SC 2.3.3 / best practice):</strong>
+          Enable "Reduce Motion" in OS settings. Animations stop or use
+          simple fades.
+        </li>
+        <li>
+          <strong>Language (SC 3.1.1):</strong>
+          Page has <code>lang="en"</code> on <code>&lt;html&gt;</code>.
+        </li>
+        <li>
+          <strong>Page title (SC 2.4.2):</strong>
+          The <code>&lt;title&gt;</code> uniquely describes the page.
+        </li>
+      </ol>
+    </section>
+
+  </main>
+
+
+  <!--
+    FOOTER landmark:
+    <footer> has the implicit ARIA role="contentinfo". SC 1.3.1.
+  -->
+  <footer>
+    <p>
+      &copy; 2025 Accessibility Demo.
+      Built with semantic HTML, vanilla CSS, and vanilla JavaScript.
+      No libraries. No frameworks.
+    </p>
+    <!--
+      Footer nav with a distinct label — SC 4.1.2:
+      Without aria-label, this second <nav> would be indistinguishable
+      from the primary nav in screen reader landmark lists.
+    -->
+    <nav aria-label="Footer navigation">
+      <ul>
+        <li><a href="#accessibility-statement">Accessibility Statement</a></li>
+        <li><a href="#testing-checklist">Testing Checklist</a></li>
+        <!--
+          External link warning — SC 2.4.4 Link Purpose:
+          "(opens in new tab)" in .sr-only text warns screen reader users
+          before they activate the link. We do not rely on an icon alone,
+          as icons are aria-hidden and invisible to AT.
+        -->
+        <li>
+          <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noopener noreferrer">
+            WCAG 2.1 Quick Reference
+            <span class="sr-only">(opens in new tab)</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+
+
+  <!-- ================================================================
+       ACCESSIBLE MODAL DIALOG
+       SC 2.1.2 No Keyboard Trap (intentional trap while open — per W3C APG)
+       SC 4.1.2 Name, Role, Value
+       Follows W3C ARIA Authoring Practices Guide Dialog (Modal) pattern.
+
+       aria-hidden="true" while closed: removes the modal entirely from
+       the accessibility tree — no tab stops, no announcements — until
+       JS sets it to "false" on open. SC 4.1.2.
+  ================================================================ -->
+  <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
+    <!--
+      role="dialog": communicates dialog semantics to screen readers.
+      The native <dialog> element is now well-supported; role="dialog"
+      on a <div> is used here to explicitly demonstrate the ARIA pattern.
+      In production, prefer the native <dialog> element.
+
+      aria-modal="true": tells screen readers to treat content outside
+      the dialog as inert (not traversable). Supplements the JS focus trap.
+
+      aria-labelledby="modal-title": names the dialog using its visible
+      heading. Screen readers announce "dialog: Focus Trap Demonstration"
+      when focus enters. SC 4.1.2.
+
+      tabindex="-1": makes the <div> programmatically focusable so JS can
+      call .focus() on it as a fallback if there are no focusable children.
+      Not in the natural tab order (that requires tabindex="0" or higher).
+    -->
+    <div id="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1"
+      class="modal-dialog">
+      <h2 id="modal-title">Focus Trap Demonstration</h2>
+      <p>
+        When this modal is open, keyboard focus is contained within it.
+        Pressing <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> cycles only
+        among the elements below. Press <kbd>Escape</kbd> or the button
+        below to close and return focus to the trigger button.
+      </p>
+
+      <div class="modal-body">
+        <label for="modal-input">Sample input field:</label>
+        <input type="text" id="modal-input" placeholder="Type here…">
+
+        <!--
+          <fieldset> + <legend>: groups related radio buttons. SC 1.3.1 (H71).
+          The legend is announced as the group label, so each option is read
+          as: "Option A, radio button, 1 of 2, Demo Options group."
+          This context is lost if <fieldset>/<legend> are omitted.
+        -->
+        <fieldset>
+          <legend>Demo Options</legend>
+          <!--
+            Wrapping <label> pattern: input nested *inside* the label.
+            Valid per SC 1.3.1 — no separate for/id pairing needed.
+          -->
+          <label>
+            <input type="radio" name="demo-option" value="a"> Option A
+          </label>
+          <label>
+            <input type="radio" name="demo-option" value="b"> Option B
+          </label>
+        </fieldset>
+      </div>
+
+      <div class="modal-footer">
+        <a href="#testing-checklist">Go to checklist (link inside modal)</a>
+        <!--
+          Close button: last focusable element. When focused and Tab is
+          pressed, the focus trap JS redirects to the first focusable
+          element (the input above). SC 2.1.2.
+        -->
+        <button type="button" id="close-modal-btn">Close Modal</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
